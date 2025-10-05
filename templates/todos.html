@@ -1,0 +1,11 @@
+{% extends "public/main.html" %}
+
+{% block content  %}
+  <ul>
+    {% for todo in todos %}
+      <li>{{ todo.id }}. {{ todo.name }}</li>
+    {% endfor %}
+  </ul>
+  
+  
+{% endblock %}

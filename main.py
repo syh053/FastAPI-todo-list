@@ -1,14 +1,34 @@
-from fastapi import FastAPI
+from typing import Annotated
+from fastapi import FastAPI, Query, Request, Depends
+from fastapi.templating import Jinja2Templates
+from sqlmodel import Session, select
+from db.models import get_session
+from db.models.todos import Todos
+
+templates = Jinja2Templates(directory="templates")
 
 app = FastAPI()
 
+
+SessionDep = Annotated[Session, Depends(get_session)]
+
+
 @app.get("/")
-async def index():
-  return "Hello World!"
+async def index(request: Request):
+  return templates.TemplateResponse(request, 'index.html')
 
 @app.get("/todos")
-async def get_todos():
-  return "get todos"
+async def get_todos(
+  request: Request,
+  session: SessionDep,
+  offset: int = 0,
+  limit: Annotated[int, Query(le=100)] = 100
+) :
+  todos = session.exec(select(Todos.id, Todos.name).offset(offset).limit(limit)).all()
+
+  todos = [{'id': todo[0], 'name':todo[1]} for todo in todos ]
+
+  return templates.TemplateResponse(request, 'todos.html', {'todos' : todos})
 
 @app.get("/todos/new")
 async def get_todos_new_page():
