@@ -3,5 +3,6 @@
 
 {% block content %}
   <p>{{todo.name}}</p>
-  <a href="/todos"> 回首頁 </a>
+  <a href="/todos/{{ todo.id }}/edit"> 編輯 </a>
+  <a href="/todos" style="margin-left: 10px;"> 回首頁 </a
 {% endblock %}

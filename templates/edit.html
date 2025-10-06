@@ -1,0 +1,9 @@
+{% extends "public/main.html" %}
+
+{% block content %}
+  <form action="/todos/{{ todo.id }}" method="POST">
+    <input type="text" name="_method" value="PUT" hidden>
+    <input type="text" name="name" value="{{ todo.name }}">
+    <button type="submit">Save</button>
+  </form>
+{% endblock %}

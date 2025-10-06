@@ -15,6 +15,23 @@ app = FastAPI()
 SessionDep = Annotated[Session, Depends(get_session)]
 
 
+""" middleware，每一個 HTTP 請求進來時先進來這個 middleware，再分配要進到哪一個路由 """
+@app.middleware("http")
+async def method_override(
+  request: Request,
+  call_next
+):
+  if request.method == "POST":
+    form = await request.form()
+    method = form.get("_method")
+    if method:
+        request.scope["method"] = str(method).upper()  # 改變 HTTP 方法
+
+    request.state.form = form
+  response = await call_next(request)
+  return response
+
+
 @app.get("/")
 async def index(request: Request):
   return templates.TemplateResponse(request, 'index.html')
@@ -60,12 +77,36 @@ async def get_todos_detail(
   return templates.TemplateResponse(request, "todo.html", {"todo" : result})
 
 @app.get("/todos/{id}/edit")
-async def get_todos_edit_page(id: int):
-  return f"get {id} todos edit page"
+async def get_todos_edit_page(
+  id: int,
+  reqest: Request,
+  session: SessionDep
+):
+  todo = select(Todos.id, Todos.name).where(col(Todos.id) == id)
+  result = session.exec(todo).one()
+  result = {"id": result[0], "name": result[1]}
 
-@app.put("todos/{id}")
-async def update_todos(id: int):
-  return f"todos {id} modified"
+  return templates.TemplateResponse(reqest, "edit.html", {"todo" : result})
+
+@app.put("/todos/{id}")
+async def update_todos(
+  request: Request,
+  session: SessionDep,
+  id: int,
+):
+  form = request.state.form
+  name = form.get("name")
+
+  """ 先 select 要修改的 todo，並建立 instance"""
+  statement = select(Todos).where(Todos.id == id)
+  todo = session.exec(statement).one()
+
+  """ 接著修改 instance 的 name，再新增 """
+  todo.name = name
+  session.add(todo)
+  session.commit()
+
+  return RedirectResponse(f"/todos/{id}", status_code=303)
 
 @app.delete("/todos/{id}")
 async def delete_todos(id: int):
