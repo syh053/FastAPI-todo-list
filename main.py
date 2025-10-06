@@ -2,7 +2,8 @@ from typing import Annotated
 from fastapi import FastAPI, Query, Request, Depends, Form
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from sqlmodel import Session, select
+from httpx import request
+from sqlmodel import Session, select, col
 from db.models import get_session
 from db.models.todos import Todos
 
@@ -45,8 +46,18 @@ async def create_todos(
   return RedirectResponse("/todos", status_code=303)
 
 @app.get("/todos/{id}")
-async def get_todos_detail(id: int):
-  return f"get todo : {id}"
+async def get_todos_detail(
+  request: Request,
+  id: int,
+  session: SessionDep
+):
+  todo_detail = select(Todos.id, Todos.name).where(Todos.id == id)
+
+  result = session.exec(todo_detail).one()
+
+  result = {"id" : result[0], "name": result[1]}
+
+  return templates.TemplateResponse(request, "todo.html", {"todo" : result})
 
 @app.get("/todos/{id}/edit")
 async def get_todos_edit_page(id: int):

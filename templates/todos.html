@@ -5,7 +5,10 @@
 
   <ul>
     {% for todo in todos %}
-      <li>{{ todo.id }}. {{ todo.name }}</li>
+      <li>
+        {{ todo.id }}. {{ todo.name }}
+        <a href="/todos/{{ todo.id }}" style="margin-left: 10px;">details</a>
+      </li>
     {% endfor %}
   </ul>
   
