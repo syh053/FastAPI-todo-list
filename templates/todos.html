@@ -1,6 +1,8 @@
 {% extends "public/main.html" %}
 
 {% block content  %}
+  <a href="/todos/new">新增待辦事項</a>
+
   <ul>
     {% for todo in todos %}
       <li>{{ todo.id }}. {{ todo.name }}</li>

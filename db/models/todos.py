@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field, create_engine
+from sqlmodel import SQLModel, Field
 from datetime import datetime
 
 class Todos(SQLModel, table=True):

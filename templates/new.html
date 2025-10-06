@@ -1,0 +1,10 @@
+{% extends "public/main.html" %}
+
+{% block content %}
+
+  <form action="/todos", method="POST">
+    <input type="text" placeholder="請輸入 todo 內容" name="name">
+    <button type="submit">Create</button>
+  </form>
+
+{% endblock %}

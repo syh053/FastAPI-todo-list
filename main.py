@@ -1,5 +1,6 @@
 from typing import Annotated
-from fastapi import FastAPI, Query, Request, Depends
+from fastapi import FastAPI, Query, Request, Depends, Form
+from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 from db.models import get_session
@@ -31,12 +32,17 @@ async def get_todos(
   return templates.TemplateResponse(request, 'todos.html', {'todos' : todos})
 
 @app.get("/todos/new")
-async def get_todos_new_page():
-  return "get todos new page"
+async def get_todos_new_page(request: Request):
+  return templates.TemplateResponse(request, "new.html")
 
 @app.post("/todos")
-async def create_todos():
-  return "add todos"
+async def create_todos(
+  session: SessionDep,
+  name: str = Form()
+):
+  session.add(Todos(name= name))
+  session.commit()
+  return RedirectResponse("/todos", status_code=303)
 
 @app.get("/todos/{id}")
 async def get_todos_detail(id: int):
