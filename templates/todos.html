@@ -5,10 +5,15 @@
 
   <ul>
     {% for todo in todos %}
-      <li>
+      <li style="margin-bottom: 10px;">
         {{ todo.id }}. {{ todo.name }}
         <a href="/todos/{{ todo.id }}" style="margin-left: 10px;">details</a>
         <a href="/todos/{{ todo.id }}/edit" style="margin-left: 10px;">edit</a>
+
+        <form action="/todos/{{ todo.id }}" method="POST" style="display: inline;">
+          <input type="text" name="_method" value="DELETE" hidden>
+          <button type="submit" style="margin-left: 10px;">delete</button>
+        </form>
       </li>
     {% endfor %}
   </ul>

@@ -112,6 +112,16 @@ async def update_todos(
   return RedirectResponse(f"/todos/{id}", status_code=303)
 
 @app.delete("/todos/{id}")
-async def delete_todos(id: int):
-  return f"delete {id} todos"
+async def delete_todos(
+  id: int,
+  session: SessionDep
+):
+
+  statement = select(Todos).where(Todos.id == id)
+  todo = session.exec(statement).one()
+
+  session.delete(todo)
+  session.commit()
+
+  return RedirectResponse("/todos", status_code=303)
   
