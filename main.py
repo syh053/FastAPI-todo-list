@@ -23,7 +23,7 @@ async def method_override(
 ):
   if request.method == "POST":
     form = await request.form()
-    method = form.get("_method")
+    method = form.get("_method") or "POST"
     if method:
         request.scope["method"] = str(method).upper()  # 改變 HTTP 方法
 
@@ -55,9 +55,12 @@ async def get_todos_new_page(request: Request):
 
 @app.post("/todos")
 async def create_todos(
+  request: Request,
   session: SessionDep,
-  name: str = Form()
 ):
+  form = request.state.form
+  name = form.get("name")
+
   session.add(Todos(name= name))
   session.commit()
   return RedirectResponse("/todos", status_code=303)
