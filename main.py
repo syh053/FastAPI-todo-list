@@ -43,9 +43,9 @@ async def get_todos(
   offset: int = 0,
   limit: Annotated[int, Query(le=100)] = 100
 ) :
-  todos = session.exec(select(Todos.id, Todos.name).offset(offset).limit(limit)).all()
+  todos = session.exec(select(Todos.id, Todos.name, Todos.isComplete).offset(offset).limit(limit)).all()
 
-  todos = [{'id': todo[0], 'name':todo[1]} for todo in todos ]
+  todos = [{'id': todo[0], 'name':todo[1], "completed": todo[2]} for todo in todos ]
 
   return templates.TemplateResponse(request, 'todos.html', {'todos' : todos})
 
@@ -71,11 +71,11 @@ async def get_todos_detail(
   id: int,
   session: SessionDep
 ):
-  todo_detail = select(Todos.id, Todos.name).where(Todos.id == id)
+  todo_detail = select(Todos.id, Todos.name, Todos.isComplete).where(Todos.id == id)
 
   result = session.exec(todo_detail).one()
 
-  result = {"id" : result[0], "name": result[1]}
+  result = {"id" : result[0], "name": result[1], "completed": result[2]}
 
   return templates.TemplateResponse(request, "todo.html", {"todo" : result})
 
@@ -85,9 +85,9 @@ async def get_todos_edit_page(
   reqest: Request,
   session: SessionDep
 ):
-  todo = select(Todos.id, Todos.name).where(col(Todos.id) == id)
+  todo = select(Todos.id, Todos.name, Todos.isComplete).where(Todos.id == id)
   result = session.exec(todo).one()
-  result = {"id": result[0], "name": result[1]}
+  result = {"id": result[0], "name": result[1], "completed": result[2]}
 
   return templates.TemplateResponse(reqest, "edit.html", {"todo" : result})
 
@@ -99,6 +99,7 @@ async def update_todos(
 ):
   form = request.state.form
   name = form.get("name")
+  completed = form.get("completed")
 
   """ 先 select 要修改的 todo，並建立 instance"""
   statement = select(Todos).where(Todos.id == id)
@@ -106,6 +107,7 @@ async def update_todos(
 
   """ 接著修改 instance 的 name，再新增 """
   todo.name = name
+  todo.isComplete = bool(completed)
   session.add(todo)
   session.commit()
 

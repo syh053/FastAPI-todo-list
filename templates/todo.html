@@ -2,7 +2,10 @@
 
 
 {% block content %}
-  <p>{{todo.name}}</p>
+  <p>
+    <input type="checkbox" style="margin-right: 10px;" {% if todo.completed %} checked {% endif %} disabled>
+    {{todo.name}}
+  </p>
   <a href="/todos/{{ todo.id }}/edit"> 編輯 </a>
 
   <form action="/todos/{{ todo.id }}" method="POST" style="display: inline;">
