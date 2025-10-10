@@ -1,9 +1,9 @@
 from typing import Annotated
-from fastapi import FastAPI, Query, Request, Depends, Form
+from fastapi import FastAPI, Query, Request, Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from httpx import request
-from sqlmodel import Session, select, col
+from sqlmodel import Session, select
+from sqlalchemy.exc import NoResultFound # 若 ORM 找不到資料時，引發的錯誤類
 from db.models import get_session
 from db.models.todos import Todos
 from starlette.middleware.sessions import SessionMiddleware
@@ -57,7 +57,9 @@ async def get_todos(
 
 @app.get("/todos/new")
 async def get_todos_new_page(request: Request):
-  return templates.TemplateResponse(request, "new.html")
+  message = get_flash_message(request) 
+
+  return templates.TemplateResponse(request, "new.html", {'message': message})
 
 @app.post("/todos")
 async def create_todos(
@@ -66,6 +68,17 @@ async def create_todos(
 ):
   form = request.state.form
   name = form.get("name")
+
+  """ 檢查 name 長度 """
+  try :
+    if len(name) > 20 : raise HTTPException(status_code=400, detail="Name 長度不能超過 20")
+
+  except HTTPException as e:
+    flash_message(request, f"新增 Todo 失敗 : { e.detail }", "error")
+
+    prev_url = request.headers.get("referer") or "/"
+
+    return RedirectResponse(prev_url, status_code=303)
 
   session.add(Todos(name= name))
   session.commit()
@@ -82,7 +95,17 @@ async def get_todos_detail(
 ):
   todo_detail = select(Todos.id, Todos.name, Todos.isComplete).where(Todos.id == id)
 
-  result = session.exec(todo_detail).one()
+  """ 檢查是否有此 todo """
+  try:
+    result = session.exec(todo_detail).one()
+
+  except NoResultFound as e :
+    print(e)
+
+    flash_message(request, "找不到 Todo!", "error")
+
+    return RedirectResponse("/todos", status_code=303)
+
 
   result = {"id" : result[0], "name": result[1], "completed": result[2]}
 
@@ -97,10 +120,23 @@ async def get_todos_edit_page(
   session: SessionDep
 ):
   todo = select(Todos.id, Todos.name, Todos.isComplete).where(Todos.id == id)
-  result = session.exec(todo).one()
+
+  """ 檢查是否有此 todo """
+  try:
+    result = session.exec(todo).one()
+
+  except NoResultFound as e :
+    print(e)
+
+    flash_message(request, "無此 todo 可編輯!", "error")
+
+    return RedirectResponse("/todos", status_code=303)
+
   result = {"id": result[0], "name": result[1], "completed": result[2]}
 
-  return templates.TemplateResponse(request, "edit.html", {"todo" : result})
+  message = get_flash_message(request)
+
+  return templates.TemplateResponse(request, "edit.html", {"todo" : result, "message" : message})
 
 @app.put("/todos/{id}")
 async def update_todos(
@@ -112,9 +148,28 @@ async def update_todos(
   name = form.get("name")
   completed = form.get("completed")
 
-  """ 先 select 要修改的 todo，並建立 instance"""
-  statement = select(Todos).where(Todos.id == id)
-  todo = session.exec(statement).one()
+  """ 檢查 name 長度 """
+  try :
+    if len(name) > 20 : raise HTTPException(status_code=400, detail="Name 長度不能超過 20")
+
+    """ 先 select 要修改的 todo，並建立 instance"""
+    statement = select(Todos).where(Todos.id == id)
+    todo = session.exec(statement).one()
+
+  except HTTPException as e:
+    flash_message(request, f"修改 Todo 失敗 : { e.detail }", "error")
+
+    prev_url = request.headers.get("referer") or "/"
+
+    return RedirectResponse(prev_url, status_code=303)
+  
+  except NoResultFound as e:
+    flash_message(request, "無此 todo 可編輯! ", "error")
+
+    prev_url = request.headers.get("referer") or "/todos"
+
+    return RedirectResponse(prev_url, status_code=303)
+
 
   """ 接著修改 instance 的 name，再新增 """
   todo.name = name
@@ -134,7 +189,18 @@ async def delete_todos(
 ):
 
   statement = select(Todos).where(Todos.id == id)
-  todo = session.exec(statement).one()
+
+  try:
+    todo = session.exec(statement).one()
+
+  except NoResultFound as e:
+    print(e)
+
+    flash_message(request, "無此 todo 可刪除! ", "error")
+
+    prev_url = request.headers.get("referer") or "/todos"
+
+    return RedirectResponse(prev_url, status_code=303)
 
   session.delete(todo)
   session.commit()

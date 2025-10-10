@@ -1,6 +1,17 @@
 {% extends "public/main.html" %}
 
 {% block content %}
+
+  {% if message %}
+    <div class="flash-message-{{ message.category }}">
+      {% if message.category in ['success', 'info'] %}
+      <p style="color: mediumblue ;">{{ message.message }}</p>
+      {% else %}
+      <p style="color: red;">{{ message.message }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+
   <form action="/todos/{{ todo.id }}" method="POST">
     <input type="text" name="_method" value="PUT" hidden>
     <input type="checkbox" name="completed" value="completed" {% if todo.completed %} checked {% endif %} style="margin-right: 10px;">
