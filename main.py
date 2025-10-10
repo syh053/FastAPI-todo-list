@@ -6,11 +6,15 @@ from httpx import request
 from sqlmodel import Session, select, col
 from db.models import get_session
 from db.models.todos import Todos
+from starlette.middleware.sessions import SessionMiddleware
+from tool.tools import flash_message, get_flash_message
 
 templates = Jinja2Templates(directory="templates")
 
 app = FastAPI()
 
+# 自動在 request 中加入 session 並簽名
+app.add_middleware(SessionMiddleware, secret_key="secret")
 
 SessionDep = Annotated[Session, Depends(get_session)]
 
@@ -47,7 +51,9 @@ async def get_todos(
 
   todos = [{'id': todo[0], 'name':todo[1], "completed": todo[2]} for todo in todos ]
 
-  return templates.TemplateResponse(request, 'todos.html', {'todos' : todos})
+  message = get_flash_message(request) 
+
+  return templates.TemplateResponse(request, 'todos.html', {'todos' : todos, 'message': message})
 
 @app.get("/todos/new")
 async def get_todos_new_page(request: Request):
@@ -63,6 +69,9 @@ async def create_todos(
 
   session.add(Todos(name= name))
   session.commit()
+
+  flash_message(request, "成功建立 Todo!", "success")
+
   return RedirectResponse("/todos", status_code=303)
 
 @app.get("/todos/{id}")
@@ -77,19 +86,21 @@ async def get_todos_detail(
 
   result = {"id" : result[0], "name": result[1], "completed": result[2]}
 
-  return templates.TemplateResponse(request, "todo.html", {"todo" : result})
+  message = get_flash_message(request)
+
+  return templates.TemplateResponse(request, "todo.html", {"todo" : result, "message": message})
 
 @app.get("/todos/{id}/edit")
 async def get_todos_edit_page(
   id: int,
-  reqest: Request,
+  request: Request,
   session: SessionDep
 ):
   todo = select(Todos.id, Todos.name, Todos.isComplete).where(Todos.id == id)
   result = session.exec(todo).one()
   result = {"id": result[0], "name": result[1], "completed": result[2]}
 
-  return templates.TemplateResponse(reqest, "edit.html", {"todo" : result})
+  return templates.TemplateResponse(request, "edit.html", {"todo" : result})
 
 @app.put("/todos/{id}")
 async def update_todos(
@@ -111,10 +122,13 @@ async def update_todos(
   session.add(todo)
   session.commit()
 
+  flash_message(request, "成功修改資料", "success")
+
   return RedirectResponse(f"/todos/{id}", status_code=303)
 
 @app.delete("/todos/{id}")
 async def delete_todos(
+  request: Request,
   id: int,
   session: SessionDep
 ):
@@ -124,6 +138,8 @@ async def delete_todos(
 
   session.delete(todo)
   session.commit()
+
+  flash_message(request, "成功刪除資料", "success")
 
   return RedirectResponse("/todos", status_code=303)
   

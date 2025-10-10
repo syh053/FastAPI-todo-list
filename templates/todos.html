@@ -1,6 +1,16 @@
 {% extends "public/main.html" %}
 
 {% block content  %}
+  {% if message %}
+    <div class="flash-message-{{ message.category }}">
+      {% if message.category in ['success', 'info'] %}
+        <p style="color: mediumblue ;">{{ message.message }}</p>
+      {% else %}
+        <p style="color: red;">{{ message.message }}</p>  
+      {% endif %}
+    </div>
+  {% endif %}
+
   <a href="/todos/new">新增待辦事項</a>
 
   <ul>
