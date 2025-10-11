@@ -1,9 +1,11 @@
-from sqlmodel import create_engine, Session
+from typing import AsyncGenerator
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-mysql_url = "mysql+pymysql://root:1234567890@localhost/todo"
+mysql_url = "mysql+aiomysql://root:1234567890@localhost/todo"
 
-engine = create_engine(mysql_url, echo=True)
-  
-def get_session():
-    with Session(engine) as session:
+asyne_engine = create_async_engine(mysql_url, echo=True)
+AsyncSessionLocal = async_sessionmaker(asyne_engine, expire_on_commit=False)
+
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    async with AsyncSessionLocal() as session:
         yield session
