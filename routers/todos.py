@@ -15,6 +15,8 @@ templates = Jinja2Templates(directory="templates")
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
+
+
 """
 查看所有 todos 路由
 """
@@ -29,15 +31,19 @@ async def get_todos(
 
   todos = [{'id': todo[0], 'name':todo[1], "completed": todo[2]} for todo in result.all() ]
 
-  message = get_flash_message(request) 
+  return templates.TemplateResponse(request, 'todos.html', {'todos' : todos, 'message': request.state.success_message})
 
-  return templates.TemplateResponse(request, 'todos.html', {'todos' : todos, 'message': message})
 
+
+"""
+新增 todos 頁面路由
+"""
 @todos.get("/new")
 async def get_todos_new_page(request: Request):
   message = get_flash_message(request) 
 
-  return templates.TemplateResponse(request, "new.html", {'message': message})
+  return templates.TemplateResponse(request, "new.html", {'message': request.state.success_message})
+
 
 
 """
@@ -67,7 +73,8 @@ async def create_todos(
 
   flash_message(request, "成功建立 Todo!", "success")
 
-  return RedirectResponse("/todos", status_code=303)
+  return RedirectResponse("/todos/", status_code=303)
+
 
 
 """
@@ -91,14 +98,13 @@ async def get_todos_detail(
 
     flash_message(request, "找不到 Todo!", "error")
 
-    return RedirectResponse("/todos", status_code=303)
+    return RedirectResponse("/todos/", status_code=303)
 
 
   result = {"id" : result[0], "name": result[1], "completed": result[2]}
 
-  message = get_flash_message(request)
+  return templates.TemplateResponse(request, "todo.html", {"todo" : result, "message": request.state.success_message})
 
-  return templates.TemplateResponse(request, "todo.html", {"todo" : result, "message": message})
 
 
 """
@@ -122,13 +128,12 @@ async def get_todos_edit_page(
 
     flash_message(request, "無此 todo 可編輯!", "error")
 
-    return RedirectResponse("/todos", status_code=303)
+    return RedirectResponse("/todos/", status_code=303)
 
   result = {"id": result[0], "name": result[1], "completed": result[2]}
 
-  message = get_flash_message(request)
+  return templates.TemplateResponse(request, "edit.html", {"todo" : result, "message" : request.state.success_message})
 
-  return templates.TemplateResponse(request, "edit.html", {"todo" : result, "message" : message})
 
 
 """
@@ -164,6 +169,8 @@ async def update_todos(
 
     prev_url = request.headers.get("referer") or "/"
 
+    print(prev_url)
+
     return RedirectResponse(prev_url, status_code=303)
   
   except NoResultFound as e:
@@ -178,6 +185,7 @@ async def update_todos(
   flash_message(request, "成功修改資料", "success")
 
   return RedirectResponse(f"/todos/{id}", status_code=303)
+
 
 
 """
@@ -211,4 +219,4 @@ async def delete_todos(
 
   flash_message(request, "成功刪除資料", "success")
 
-  return RedirectResponse("/todos", status_code=303)
+  return RedirectResponse("/todos/", status_code=303)
