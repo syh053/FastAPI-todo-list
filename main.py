@@ -4,6 +4,15 @@ from routers import router
 from middlewares.method_override import MethodOverrideMiddle
 from middlewares.flash_message import FlashMessageMiddleware
 from middlewares.error_message import ErrorMessageMiddle
+import os
+from dotenv import load_dotenv
+
+
+# 偵測還境變數
+if os.environ["ENVIRONMENT"] == "development" :
+  # 預設使用 .env 還境變數
+  load_dotenv()
+
 
 app = FastAPI()
 
@@ -17,7 +26,7 @@ app.add_middleware(FlashMessageMiddleware)
 app.add_middleware(ErrorMessageMiddle)
 
 # 自動在 request 中加入 session 並簽名
-app.add_middleware(SessionMiddleware, secret_key="secret")
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "deault"))
 
 # 總路由
 app.include_router(router)
