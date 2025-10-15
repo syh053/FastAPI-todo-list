@@ -2,15 +2,7 @@
 
 
 {% block content %}
-  {% if message %}
-  <div class="flash-message-{{ message.category }}">
-    {% if message.category in ['success', 'info'] %}
-    <p style="color: mediumblue ;">{{ message.message }}</p>
-    {% else %}
-    <p style="color: red;">{{ message.message }}</p>
-    {% endif %}
-  </div>
-  {% endif %}
+  {% include "public/message.html" %}
 
   <p>
     <input type="checkbox" style="margin-right: 10px;" {% if todo.completed %} checked {% endif %} disabled>

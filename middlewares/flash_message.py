@@ -7,7 +7,7 @@ class FlashMessageMiddleware(BaseHTTPMiddleware):
         flash = request.session.pop("_flash", None)
        
         # 將 flash message 附加到 request.state
-        request.state.success_message = flash
+        request.state.message = flash
         
         # 繼續處理請求
         response = await call_next(request)
