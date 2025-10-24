@@ -21,6 +21,17 @@
       </li>
     {% endfor %}
   </ul>
-  
-  
+
+  <form action="/todos/" method="GET" style="display: inline;">
+    <input type="text" name="page" value="{{  page_info.page | default(1) | int - 1 }}" hidden>
+    <button type="submit">上一頁</button>
+  </form>
+
+  <span>{{ page_info.page | default(1) }}</span>
+
+  <form action="/todos/" method="GET" style="display: inline;">
+    <input type="text" name="page" value="{{  page_info.page | default(1) | int + 1 }}" hidden>
+    <button type="submit">下一頁</button>
+  </form>
+
 {% endblock %}

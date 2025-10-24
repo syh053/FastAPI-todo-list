@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import NoResultFound # 若 ORM 找不到資料時，引發的錯誤類
 from db.models import get_session
-from sqlmodel import select
+from sqlmodel import select, text
 from db.models.todos import Todos
 from tool.tools import flash_message
 
@@ -25,13 +25,36 @@ async def get_todos(
   request: Request,
   session: SessionDep,
   offset: int = 0,
-  limit: Annotated[int, Query(le=100)] = 100
+  limit: Annotated[int, Query(le=100)] = 10,
+  page: int = Query(default=1)
 ) :
+  
+  # 每頁顯示的 todo 數量
+  LIMIT = 10 
+
+  # todo 總數量
+  result = await session.execute(text("select count(*) from todos"))
+  total_todos = result.scalar() or 0
+
+  # 總頁數
+  total_page = total_todos // LIMIT
+
+  # 目前頁面
+  if page < 1 : page = 1
+  if page > total_page : page = total_page
+
+  # 計算偏移量
+  offset = (page - 1) * 10
+
   result = await session.execute(select(Todos.id, Todos.name, Todos.isComplete).offset(offset).limit(limit))
 
   todos = [{'id': todo[0], 'name':todo[1], "completed": todo[2]} for todo in result.all() ]
 
-  return templates.TemplateResponse(request, 'todos.html', {'todos' : todos, 'message': request.state.message})
+  page_info = {}
+
+  page_info["page"] = page
+
+  return templates.TemplateResponse(request, 'todos.html', {'todos' : todos, 'message': request.state.message, "page_info":page_info})
 
 
 
