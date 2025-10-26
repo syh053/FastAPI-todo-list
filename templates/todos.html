@@ -1,37 +1,44 @@
 {% extends "public/main.html" %}
 
-{% block content  %}
+{% block content %}
   {% include "public/message.html" %}
 
-  <a href="/todos/new">新增待辦事項</a>
+  <div style="max-width: 50%;">
 
-  <ul>
-    {% for todo in todos %}
-      <li style="margin-bottom: 10px;">
-        <input type="checkbox" {% if todo.completed %} checked {% endif %} disabled>
+    <div>
+      <a href="/todos/new">新增待辦事項</a>
+      {% include "public/logout.html" %}
+    </div>
+    
+    <ul>
+      {% for todo in todos %}
+        <li style="margin-bottom: 10px;">
+          <input type="checkbox" {% if todo.completed %} checked {% endif %} disabled>
 
-        {{ todo.id }}. {{ todo.name }}
-        <a href="/todos/{{ todo.id }}" style="margin-left: 10px;">details</a>
-        <a href="/todos/{{ todo.id }}/edit" style="margin-left: 10px;">edit</a>
+          {{ todo.id }}. {{ todo.name }}
+          <a href="/todos/{{ todo.id }}" style="margin-left: 10px;">details</a>
+          <a href="/todos/{{ todo.id }}/edit" style="margin-left: 10px;">edit</a>
 
-        <form action="/todos/{{ todo.id }}" method="POST" style="display: inline;">
-          <input type="text" name="_method" value="DELETE" hidden>
-          <button type="submit" style="margin-left: 10px;">delete</button>
-        </form>
-      </li>
-    {% endfor %}
-  </ul>
+          <form action="/todos/{{ todo.id }}" method="POST" style="display: inline;">
+            <input type="text" name="_method" value="DELETE" hidden>
+            <button type="submit" style="margin-left: 10px;">delete</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
 
-  <form action="/todos/" method="GET" style="display: inline;">
-    <input type="text" name="page" value="{{  page_info.page | default(1) | int - 1 }}" hidden>
-    <button type="submit">上一頁</button>
-  </form>
+    <form action="/todos/" method="GET" style="display: inline;">
+      <input type="text" name="page" value="{{  page_info.page | default(1) | int - 1 }}" hidden>
+      <button type="submit">上一頁</button>
+    </form>
 
-  <span>{{ page_info.page | default(1) }}</span>
+    <span>{{ page_info.page | default(1) }}</span>
 
-  <form action="/todos/" method="GET" style="display: inline;">
-    <input type="text" name="page" value="{{  page_info.page | default(1) | int + 1 }}" hidden>
-    <button type="submit">下一頁</button>
-  </form>
+    <form action="/todos/" method="GET" style="display: inline;">
+      <input type="text" name="page" value="{{  page_info.page | default(1) | int + 1 }}" hidden>
+      <button type="submit">下一頁</button>
+    </form>
+
+  </div>
 
 {% endblock %}

@@ -5,6 +5,7 @@ from sqlalchemy import pool
 
 from sqlmodel import SQLModel
 from db.models.todos import Todos
+from db.models.users import Users
 
 from alembic import context
 

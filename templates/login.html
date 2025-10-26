@@ -1,0 +1,20 @@
+{% extends "public/main.html" %}
+
+{% block content %}
+  <div style="margin: 15px;">
+    <h1>Log In</h1>
+
+    <form action="/users/login" method="POST">
+      <label for="email" style="display: block;">Email:</label>
+      <input type="text" id="email" name="email" style="margin-top: 5px;" required>
+      <br>
+      <label for="password" style="display: block; margin-top: 10px;">Password:</label>
+      <input type="password" id="password" name="password" style="margin-top: 5px;" required>
+      <br>
+      <button type="submit" style="margin-top: 10px;">Log In</button>
+    </form>
+
+    <p>No account? <a href="/users/register">Register</a></p>
+  </div>
+
+{% endblock %}

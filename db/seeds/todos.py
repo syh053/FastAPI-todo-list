@@ -8,7 +8,7 @@ sys.path.append(package_path)
 from models import get_session, asyne_engine # 加入非同步 engine
 from models.todos import Todos
 
-seed_data = [Todos(name=f"Todo {i}") for i in range(1, 11)]
+seed_data = [Todos(name=f"Todo {i}") for i in range(1, 1000)]
 
 async def main():
     async for session in get_session():

@@ -1,0 +1,27 @@
+{% extends "public/main.html" %}
+
+{% block content %}
+
+  <div style="margin: 15px;">
+    <h1>Register</h1>
+
+    <form action="/users/register" method="POST">
+      <label for="name" style="display: block;">Name:</label>
+      <input type="text" id="name" name="name" style="margin-top: 5px;" placeholder="請輸入名稱">
+      <br>
+      <label for="email" style="display: block; margin-top: 10px;">Email:</label>
+      <input type="text" id="email" name="email" style="margin-top: 5px;" placeholder="請輸入電子郵件" required>
+      <br>
+      <label for="password" style="display: block; margin-top: 10px;">Password:</label>
+      <input type="password" id="password" name="password" style="margin-top: 5px;" placeholder="請輸入密碼" required>
+      <br>
+      <label for="confirm_password" style="display: block; margin-top: 10px;">Confirm Password:</label>
+      <input type="password" id="confirm_password" name="confirm_password" style="margin-top: 5px;" placeholder="請輸入確認密碼" required>
+      <br>
+      <button type="submit" style="margin-top: 10px;">Register</button>
+    </form>
+
+    <p>Already have an account? <a href="/users/login">Login</a></p>
+  </div>
+
+{% endblock %}
