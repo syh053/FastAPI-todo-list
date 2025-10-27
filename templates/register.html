@@ -5,6 +5,8 @@
   <div style="margin: 15px;">
     <h1>Register</h1>
 
+    {% include "public/message.html" %}
+
     <form action="/users/register" method="POST">
       <label for="name" style="display: block;">Name:</label>
       <input type="text" id="name" name="name" style="margin-top: 5px;" placeholder="請輸入名稱">

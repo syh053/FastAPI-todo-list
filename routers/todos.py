@@ -16,7 +16,6 @@ templates = Jinja2Templates(directory="templates")
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 
-
 """
 查看所有 todos 路由
 """
