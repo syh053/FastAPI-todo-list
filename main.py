@@ -26,7 +26,10 @@ app.add_middleware(FlashMessageMiddleware)
 app.add_middleware(ErrorMessageMiddle)
 
 # 自動在 request 中加入 session 並簽名
-app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "deault"))
+app.add_middleware(SessionMiddleware,
+                   secret_key=os.getenv("SESSION_SECRET", "deault"),
+                   session_cookie="flash_message" # 增加此屬性，在 session 為 flash_message 取一個名稱放到 cookie 中
+                   )
 
 # 總路由
 app.include_router(router)

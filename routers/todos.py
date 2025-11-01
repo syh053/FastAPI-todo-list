@@ -8,6 +8,9 @@ from db.models import get_session
 from sqlmodel import select, text
 from db.models.todos import Todos
 from tool.tools import flash_message
+from tool.authentication import analyze_session
+from .users import sessions, serializer
+
 
 todos = APIRouter(prefix="/todos")
 
@@ -27,6 +30,10 @@ async def get_todos(
   limit: Annotated[int, Query(le=100)] = 10,
   page: int = Query(default=1)
 ) :
+  
+  user = analyze_session(request, serializer, sessions)
+
+  print(user)
   
   # 每頁顯示的 todo 數量
   LIMIT = 10 
