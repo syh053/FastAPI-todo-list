@@ -1,6 +1,6 @@
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from tool.tools import get_flash_message
+from tool.message import get_flash_message
 
 class FlashMessageMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):

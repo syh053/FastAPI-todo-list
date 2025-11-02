@@ -6,11 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import NoResultFound # 若 ORM 找不到資料時，引發的錯誤類
 from sqlmodel import select
 from db.models import get_session
-from tool.tools import flash_message
+from tool.message import flash_message
 from db.models.users import Users
-from itsdangerous import URLSafeSerializer
 from tool.authentication import create_session
-import os
+from tool.serializer import get_serializer
 
 
 users = APIRouter(prefix="/users")
@@ -21,9 +20,6 @@ sessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 # session storage
 sessions = {}
-
-# 初始化，用於簽名 session id
-serializer = URLSafeSerializer(os.getenv("SESSION_SECRET", "default_secret"), salt=os.getenv("SALT"))
 
 @users.get("/login")
 async def login_page(
@@ -64,9 +60,8 @@ async def login(
     raise Exception
   
   else :
-  
     # 建立已簽章好的 session id
-    signed_session_id = create_session(sessions, user, serializer)
+    signed_session_id = create_session(sessions, user)
 
     # 設定 Response 物件，會重導向登入頁面
     redirect = RedirectResponse("/todos/", status_code=303)
@@ -118,5 +113,20 @@ async def register(
 
 
 @users.post("/logout")
-async def logout():
+async def logout(
+  request: Request
+):
+  # 取出 session id
+  session_id = request.cookies.get("session_id")
+
+  # 取得 "序列化" 和 "反序列化" 方法
+  serializer = get_serializer()
+
+  # 反序列化 session_id
+  serializered_session_id = serializer.loads(session_id)
+
+  # 刪除 sessions 清單中的 session_id
+  sessions.pop(serializered_session_id, None)
+
+  # 重導回登入頁面
   return RedirectResponse("/users/login", status_code=303)
