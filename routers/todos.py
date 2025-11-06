@@ -42,8 +42,8 @@ async def get_todos(
   result = await session.execute(text("select count(*) from todos"))
   total_todos = result.scalar() or 0
 
-  # 總頁數
-  total_page = total_todos // LIMIT
+  # 總頁數，確保大於 0
+  total_page = total_todos // LIMIT if total_todos // LIMIT > 0 else 1
 
   # 目前頁面
   if page < 1 : page = 1
