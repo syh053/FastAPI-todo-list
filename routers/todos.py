@@ -8,8 +8,8 @@ from db.models import get_session
 from sqlmodel import select, text
 from db.models.todos import Todos
 from tool.message import flash_message
-from middlewares.isauthenticated import isAuthemticated
-from routers.users import sessions
+from middlewares.isauthenticated import isAuthemticated, save_user_info
+import math
 
 
 # 加入 dependencies，每個路由執行前都會先執行 isAuthemticated 函式作驗證
@@ -27,23 +27,18 @@ SessionDep = Annotated[AsyncSession, Depends(get_session)]
 async def get_todos(
   request: Request,
   session: SessionDep,
-  offset: int = 0,
-  limit: Annotated[int, Query(le=100)] = 10,
-  page: int = Query(default=1)
+  page: int = Query(default=1),
+  user: dict = Depends(save_user_info),
 ) :
-
-  print(request.state.user)
-  print(sessions)
-  
   # 每頁顯示的 todo 數量
   LIMIT = 10 
 
   # todo 總數量
-  result = await session.execute(text("select count(*) from todos"))
+  result = await session.execute(text(f"select count(*) from todos where user_id={user['id']}"))
   total_todos = result.scalar() or 0
 
   # 總頁數，確保大於 0
-  total_page = total_todos // LIMIT if total_todos // LIMIT > 0 else 1
+  total_page = math.ceil(total_todos / LIMIT) if math.ceil(total_todos / LIMIT) > 1 else 1
 
   # 目前頁面
   if page < 1 : page = 1
@@ -52,7 +47,7 @@ async def get_todos(
   # 計算偏移量
   offset = (page - 1) * 10
 
-  result = await session.execute(select(Todos.id, Todos.name, Todos.isComplete).offset(offset).limit(limit))
+  result = await session.execute(select(Todos.id, Todos.name, Todos.isComplete).where(Todos.user_id == user["id"]).offset(offset).limit(LIMIT))
 
   todos = [{'id': todo[0], 'name':todo[1], "completed": todo[2]} for todo in result.all() ]
 
@@ -81,6 +76,7 @@ async def get_todos_new_page(request: Request):
 async def create_todos(
   request: Request,
   session: SessionDep,
+  user: dict = Depends(save_user_info),
 ):
   form = request.state.form
   name = form.get("name")
@@ -90,12 +86,25 @@ async def create_todos(
     flash_message(request, "新增 Todo 失敗 : Name 長度不能超過 20", "error")
     raise Exception()
 
-  session.add(Todos(name= name))
+  session.add(Todos(name = name, user_id = user["id"]))
   await session.commit()
 
   flash_message(request, "成功建立 Todo!", "success")
 
-  return RedirectResponse("/todos/", status_code=303)
+  """ 新增成功後導向到最後一頁，讓使用者直接看到新建立的 todo """
+  # todo 總數量
+  result = await session.execute(text(f"select count(*) from todos where user_id={user['id']}"))
+  total_todos = result.scalar() or 0
+
+  # 每頁顯示的 todo 數量
+  LIMIT = 10
+
+  # 總頁數
+  total_page = math.ceil(total_todos / LIMIT) if math.ceil(total_todos / LIMIT) > 1 else 1
+
+  url = f"/todos/?page={total_page}"
+
+  return RedirectResponse(url, status_code=303)
 
 
 
@@ -106,9 +115,10 @@ async def create_todos(
 async def get_todos_detail(
   request: Request,
   id: int,
-  session: SessionDep
+  session: SessionDep,
+  user: dict = Depends(save_user_info),
 ):
-  todo_detail = select(Todos.id, Todos.name, Todos.isComplete).where(Todos.id == id)
+  todo_detail = select(Todos.id, Todos.name, Todos.isComplete, Todos.user_id).where(Todos.id == id)
 
   """ 檢查是否有此 todo """
   try:
@@ -119,8 +129,13 @@ async def get_todos_detail(
   except NoResultFound as e :
     flash_message(request, "找不到 Todo!", "error")
     raise e
+  
+  result = {"id" : result[0], "name": result[1], "completed": result[2], "user_id": result[3]}
 
-  result = {"id" : result[0], "name": result[1], "completed": result[2]}
+  # 驗證建立 todos 的 user 是否為目前的 user
+  if result["user_id"] != user["id"] :
+    flash_message(request, "權限不足!", "error")
+    return RedirectResponse("/todos/", status_code=303)
 
   return templates.TemplateResponse(request, "todo.html", {"todo" : result, "message": request.state.message})
 
@@ -133,9 +148,10 @@ async def get_todos_detail(
 async def get_todos_edit_page(
   id: int,
   request: Request,
-  session: SessionDep
+  session: SessionDep,
+  user: dict = Depends(save_user_info),
 ):
-  todo = select(Todos.id, Todos.name, Todos.isComplete).where(Todos.id == id)
+  todo = select(Todos.id, Todos.name, Todos.isComplete, Todos.user_id).where(Todos.id == id)
 
   """ 檢查是否有此 todo """
   try:
@@ -146,7 +162,12 @@ async def get_todos_edit_page(
     flash_message(request, "無此 todo 可編輯!", "error")
     raise e
 
-  result = {"id": result[0], "name": result[1], "completed": result[2]}
+  result = {"id": result[0], "name": result[1], "completed": result[2], "user_id": result[3]}
+
+  # 驗證建立 todos 的 user 是否為目前的 user
+  if result["user_id"] != user["id"] :
+    flash_message(request, "權限不足!", "error")
+    return RedirectResponse("/todos/", status_code=303)
 
   return templates.TemplateResponse(request, "edit.html", {"todo" : result, "message" : request.state.message})
 
@@ -160,6 +181,7 @@ async def update_todos(
   request: Request,
   session: SessionDep,
   id: int,
+  user: dict = Depends(save_user_info),
 ):
   form = request.state.form
   name = form.get("name")
@@ -168,7 +190,7 @@ async def update_todos(
   """ 檢查 name 長度 """
   try :
     if len(name) > 20 :
-      flash_message(request, "新增 Todo 失敗 : Name 長度不能超過 20", "error")
+      flash_message(request, "編輯 Todo 失敗 : Name 長度不能超過 20", "error")
       raise Exception()
 
     """ 先 select 要修改的 todo，並建立 instance"""
@@ -176,7 +198,12 @@ async def update_todos(
     result = await session.execute(statement)
     todo = result.scalars().one()
 
-    """ 接著修改 instance 的 name，再新增 """
+    """ 驗證建立 todos 的 user 是否為目前的 user """
+    if todo.user_id != user["id"] :
+      flash_message(request, "權限不足!", "error")
+      return RedirectResponse("/todos/", status_code=303)
+
+    """ 接著修改 instance 的 name，再編輯 """
     todo.name = name
     todo.isComplete = bool(completed)
   
@@ -199,7 +226,8 @@ async def update_todos(
 async def delete_todos(
   request: Request,
   id: int,
-  session: SessionDep
+  session: SessionDep,
+  user: dict = Depends(save_user_info),
 ):
 
   statement = select(Todos).where(Todos.id == id)
@@ -212,6 +240,11 @@ async def delete_todos(
   except NoResultFound as e:
     flash_message(request, "無此 todo 可刪除! ", "error")
     raise e
+  
+  # 驗證建立 todos 的 user 是否為目前的 user
+  if todo.user_id != user["id"] :
+    flash_message(request, "權限不足!", "error")
+    return RedirectResponse("/todos/", status_code=303)
 
   await session.delete(todo)
   await session.commit()

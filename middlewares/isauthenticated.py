@@ -12,4 +12,8 @@ async def isAuthemticated(request: Request):
    if not is_login :
      flash_message(request, "尚未登入", "error")
      raise NotAuthenticatedException
+   
+""" 儲存使用者資訊 """
+async def save_user_info(request: Request):
+   return request.state.user
   
