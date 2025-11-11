@@ -33,8 +33,8 @@ def upgrade() -> None:
         'todos_fk_1',
         'todos','users',
         ['user_id'], ['id'],
-        onupdate="RESTRICT",
-        ondelete="RESTRICT"
+        onupdate="CASCADE",
+        ondelete="CASCADE"
     )
 
 
@@ -53,6 +53,6 @@ def downgrade() -> None:
         'todos_fk_1',
         'todos','users',
         ['user_id'], ['id'],
-        onupdate="RESTRICT",
-        ondelete="RESTRICT"
+        onupdate="CASCADE",
+        ondelete="CASCADE"
     )

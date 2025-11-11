@@ -10,6 +10,7 @@ from tool.message import flash_message
 from db.models.users import Users
 from tool.authentication import create_session
 from tool.serializer import get_serializer
+import bcrypt
 
 
 users = APIRouter(prefix="/users")
@@ -42,34 +43,63 @@ async def login(
 ): 
   form = request.state.form # 讀取表單訊息
   email = form.get("email") # 讀取 email
-  password = form.get("password") # 讀取 password
+  password:str = form.get("password") # 讀取 password
 
-  result = select(Users).where(Users.email == email)
-  user = await session.execute(result)
+  result = select(Users).where(Users.email == email)  
+  user = await session.scalar(result)
 
   # 檢查是否有 mail
-  try :
-    user = user.scalar_one()
-  except NoResultFound as e:
+  if not user :
     flash_message(request, "無此 mail，請重新輸入", "error")
-    raise e
-  
-  # 檢查密碼輸入是否正確
-  if user.password != password : 
-    flash_message(request, "密碼輸入錯誤，請重新輸入", "error")
     raise Exception
   
-  else :
-    # 建立已簽章好的 session id
-    signed_session_id = create_session(sessions, user)
+  # 如果密碼是以 $2b$ 開頭，代表是 bcrypt 密碼
+  if user.password.startswith("$2b$") :
+    print(111)
+  
+    # 用 bcrypt 檢查密碼輸入是否正確
+    if not bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')) : 
+      flash_message(request, "密碼輸入錯誤，請重新輸入", "error")
+      raise Exception
+    
+    # 登入成功
+    else :
+      # 建立已簽章好的 session id
+      signed_session_id = create_session(sessions, user)
 
-    # 設定 Response 物件，會重導向登入頁面
-    redirect = RedirectResponse("/todos/", status_code=303)
+      # 設定 Response 物件，會重導向登入頁面
+      redirect = RedirectResponse("/todos/", status_code=303)
 
-    #在 Response 中設定 set_cookie 參數，httponly 可以防止 JavaScript 存取資料
-    redirect.set_cookie(key="session_id", value=signed_session_id, httponly=True)
+      #在 Response 中設定 set_cookie 參數，httponly 可以防止 JavaScript 存取資料
+      redirect.set_cookie(key="session_id", value=signed_session_id, httponly=True)
 
-  return redirect
+      return redirect
+
+  # 如果資料庫密碼是明碼
+  else:
+    # 密碼輸入錯誤
+    if user.password != password :
+      flash_message(request, "密碼輸入錯誤，請重新輸入", "error")
+      raise Exception
+    
+    # 登入成功
+    else :
+      # 將密碼進行雜湊後，傳回資料庫
+      hashed_pwd = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+      user.password = hashed_pwd
+
+      # 提交資料庫變更
+      await session.commit()
+
+      # 建立已簽章好的 session id
+      signed_session_id = create_session(sessions, user)
+
+      # 設定 Response 物件，會重導向登入頁面
+      redirect = RedirectResponse("/todos/", status_code=303)
+
+      #在 Response 中設定 set_cookie 參數，httponly 可以防止 JavaScript 存取資料
+      redirect.set_cookie(key="session_id", value=signed_session_id, httponly=True)
+      return redirect
 
 
 @users.post("/register")
@@ -79,7 +109,7 @@ async def register(
 ):
   form = request.state.form # 讀取表單訊息
   email = form.get("email") # 讀取 email
-  password = form.get("password", None) # 讀取 password
+  password:str = form.get("password", None) # 讀取 password
   confirm_password = form.get("confirm_password", None) # 讀取確認 password
   name = form.get("name")
 
@@ -102,9 +132,12 @@ async def register(
   if len(user.all()) > 0 :
     flash_message(request, "該 email 已註冊", "error")
     return RedirectResponse("/users/register", status_code=303)
+  
+  # 將密碼進行雜湊
+  hashed_pwd = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
 
   # 開始註冊
-  session.add(Users(email=email, password=password, name=name))
+  session.add(Users(email=email, password=hashed_pwd, name=name))
   await session.commit()
 
   flash_message(request, "註冊成功", "success")

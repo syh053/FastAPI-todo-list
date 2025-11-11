@@ -27,8 +27,8 @@ def upgrade() -> None:
         'users', # 被參照的資料表
         ['user_id'], # 來源表的欄位
         ['id'], # 被參照表的欄位
-        onupdate="RESTRICT",
-        ondelete="RESTRICT"
+        onupdate="CASCADE",
+        ondelete="CASCADE"
         )
     op.execute("UPDATE `todos` SET `user_id` = 1") # 為 user_id 給值
 

@@ -5,8 +5,8 @@ from fastapi.templating import Jinja2Templates
 
 router = APIRouter()
 
-router.include_router(users)
-router.include_router(todos)
+router.include_router(users, tags=["註冊&登入"])
+router.include_router(todos, tags=["todos"])
 
 templates = Jinja2Templates(directory="templates")
 
