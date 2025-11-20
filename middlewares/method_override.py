@@ -4,6 +4,11 @@ from fastapi.responses import Response
 
 class MethodOverrideMiddle(BaseHTTPMiddleware):
   async def dispatch(self, request: Request, call_next):
+
+    """ 跳過 /oauth2 路徑，避免消耗 request body """
+    if request.url.path.startswith("/oauth2"):
+        return await call_next(request)
+    
     if request.method == "POST":
       form = await request.form()
       method = form.get("_method") or "POST"

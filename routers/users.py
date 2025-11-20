@@ -55,7 +55,6 @@ async def login(
   
   # 如果密碼是以 $2b$ 開頭，代表是 bcrypt 密碼
   if user.password.startswith("$2b$") :
-    print(111)
   
     # 用 bcrypt 檢查密碼輸入是否正確
     if not bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')) : 
