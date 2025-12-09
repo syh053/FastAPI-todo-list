@@ -6,6 +6,7 @@ from middlewares.flash_message import FlashMessageMiddleware
 from middlewares.error_message import ErrorMessageMiddle
 import os
 from dotenv import load_dotenv
+from fastapi.staticfiles import StaticFiles
 
 
 # 偵測還境變數
@@ -15,6 +16,14 @@ if os.environ["ENVIRONMENT"] == "development" :
 
 
 app = FastAPI()
+
+
+app.mount(
+    "/static",
+    StaticFiles(directory="static"),
+    name="static"
+)
+
 
 # middleware，每一個 HTTP 請求進來時先進來這個 middleware，再分配要進到哪一個路由
 app.add_middleware(MethodOverrideMiddle)

@@ -1,0 +1,31 @@
+/* LOGIN */
+.login-wrapper {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: 100px 150px 150px;
+  grid-template-areas: 
+    "center center center center"
+    ". form form ."
+    ". foot-form foot-form .";
+}
+
+.title {
+  margin: 0;
+  grid-area: center;
+  text-align: center;
+  line-height: 100px;
+}
+
+.login-form {
+  min-width: 50%;
+  margin: 0 auto;
+  grid-area: form;
+  text-align: center;
+}
+
+.foot-form {
+  min-width: 50%;
+  grid-area: foot-form;
+  text-align: center;
+}
+

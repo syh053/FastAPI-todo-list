@@ -3,42 +3,59 @@
 {% block content %}
   {% include "public/message.html" %}
 
-  <div style="max-width: 50%;">
+  <div id="todos">
 
-    <div>
-      <a href="/todos/new">新增待辦事項</a>
-      {% include "public/logout.html" %}
+    <header>
+      <input type="checkbox" class="navbar-toggle" id="navbar-toggle">
+      <nav class="nav">
+        <a class="new-todo-button" href="/todos/new">新增待辦事項</a>
+        {% include "public/logout.html" %}
+      </nav>
+      <label for="navbar-toggle" class="navbar-toggle-label">
+        <span class="hamburger"></span>
+      </label>
+    </header>
+
+    <div class="container">
+      <div class="todo-list">
+        <ul class="todo-items">
+          {% for todo in todos %}
+          <li class="todo-card">
+            <span class="todo-name">{{ todo.id }}. {{ todo.name }}</span>
+
+            <div class="func-bottom">
+              <a href="/todos/{{ todo.id }}" style="margin-left: 10px;">details</a>
+              <a href="/todos/{{ todo.id }}/edit" style="margin-left: 10px;">edit</a>
+
+              <form action="/todos/{{ todo.id }}" method="POST" style="display: inline;">
+                <input type="text" name="_method" value="DELETE" hidden>
+                <button type="submit" style="margin-left: 10px;">delete</button>
+              </form>
+
+              <div class="checked">
+                <input class="todo-checked" type="checkbox" {% if todo.completed %} checked {% endif %} disabled>
+              </div>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      
+      <div class="page">
+        <form action="/todos/" method="GET" style="display: inline;">
+          <input type="text" name="page" value="{{  page_info.page | default(1) | int - 1 }}" hidden>
+          <button type="submit">上一頁</button>
+        </form>
+        
+        <span>{{ page_info.page | default(1) }}</span>
+        
+        <form action="/todos/" method="GET" style="display: inline;">
+          <input type="text" name="page" value="{{  page_info.page | default(1) | int + 1 }}" hidden>
+          <button type="submit">下一頁</button>
+        </form>
+      </div>
     </div>
-    
-    <ul>
-      {% for todo in todos %}
-        <li style="margin-bottom: 10px;">
-          <input type="checkbox" {% if todo.completed %} checked {% endif %} disabled>
-
-          {{ todo.id }}. {{ todo.name }}
-          <a href="/todos/{{ todo.id }}" style="margin-left: 10px;">details</a>
-          <a href="/todos/{{ todo.id }}/edit" style="margin-left: 10px;">edit</a>
-
-          <form action="/todos/{{ todo.id }}" method="POST" style="display: inline;">
-            <input type="text" name="_method" value="DELETE" hidden>
-            <button type="submit" style="margin-left: 10px;">delete</button>
-          </form>
-        </li>
-      {% endfor %}
-    </ul>
-
-    <form action="/todos/" method="GET" style="display: inline;">
-      <input type="text" name="page" value="{{  page_info.page | default(1) | int - 1 }}" hidden>
-      <button type="submit">上一頁</button>
-    </form>
-
-    <span>{{ page_info.page | default(1) }}</span>
-
-    <form action="/todos/" method="GET" style="display: inline;">
-      <input type="text" name="page" value="{{  page_info.page | default(1) | int + 1 }}" hidden>
-      <button type="submit">下一頁</button>
-    </form>
-
   </div>
+
+
 
 {% endblock %}

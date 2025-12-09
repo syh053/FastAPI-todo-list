@@ -1,0 +1,33 @@
+html,
+body {
+  width: 100%;
+  height: 100%;
+  background-color: #f6f7f8;
+}
+
+form {
+  margin: 0;
+}
+
+input {
+  width: 100%;
+}
+
+label {
+  text-align: left;
+}
+
+ul,
+li {
+  list-style-type: none;
+  margin: 0;
+}
+
+.container {
+  width: 85%;
+  margin: 0 auto 3rem auto;
+}
+
+.flash-message-info {
+  margin-top: 2rem;
+}
